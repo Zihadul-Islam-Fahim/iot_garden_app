@@ -14,14 +14,16 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Camera"),
+        title: const Text("Camera"),
         backgroundColor: AppColors.primaryColor.withOpacity(0.9),
       ),
-      body: SafeArea(child: Container(
-        height: double.infinity,
-        width: double.infinity,
-        color: Colors.grey,
-      ),),
+      body: SafeArea(
+        child: Container(
+          height: double.infinity,
+          width: double.infinity,
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 }
