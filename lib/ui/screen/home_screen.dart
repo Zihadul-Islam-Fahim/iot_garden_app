@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:iot_garden/ui/screen/camera_screen.dart';
 import 'package:iot_garden/ui/utitlities/app_colors.dart';
@@ -10,11 +12,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool isMotorOn = false;
+  final databaseRef = FirebaseDatabase.instanceFor(
+          app: Firebase.app(),
+          databaseURL:
+              "https://iot-garden-b741c-default-rtdb.asia-southeast1.firebasedatabase.app")
+      .ref("gardenData");
 
-  void motorOn(value) {
+  bool isMotorOn = false;
+  String humidity = "0";
+  String soilHumidity = "0";
+  String temperature = "0";
+
+  Future<void> getData() async {
+    DataSnapshot dataSnapshot = await databaseRef.get();
+    humidity = dataSnapshot.child("humidity").value.toString();
+    temperature = dataSnapshot.child("temprature").value.toString();
+    humidity = dataSnapshot.child("humidity").value.toString();
+    soilHumidity = dataSnapshot.child("soilHumidity").value.toString();
+    String motor = dataSnapshot.child("waterMotor").value.toString();
+    motor == "false" ? isMotorOn = false : isMotorOn = true;
+
+    setState(() {});
+  }
+
+  Future<void> motorOn(value) async {
     isMotorOn = !isMotorOn;
     setState(() {});
+    await databaseRef.update({
+      "waterMotor": isMotorOn,
+    });
+  }
+
+  Future<void> refresh() async {
+    await getData();
+  }
+
+  @override
+  void initState() {
+    getData();
+    super.initState();
   }
 
   @override
@@ -24,45 +60,42 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           title: const Text(
             'IOT Garden',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Colors.white,
+            ),
           ),
-          centerTitle: true,
+          // centerTitle: true,
           backgroundColor: AppColors.primaryColor,
         ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+        body: RefreshIndicator(
+          color: Colors.teal,
+          backgroundColor: Colors.amberAccent,
+          onRefresh: refresh,
+          child: ListView(
             children: [
               Container(
                 height: 200,
                 width: double.infinity,
                 color: AppColors.primaryColor.withOpacity(0.9),
-                child: const Center(
-                    child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Center(
+                    child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '28° C',
-                      style: TextStyle(fontSize: 50, color: Colors.white),
+                      '$soilHumidity%',
+                      style: const TextStyle(
+                          fontSize: 60,
+                          fontWeight: FontWeight.w200,
+                          color: Colors.white,
+                          fontFamily: 'sans'),
                     ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Text(
-                          'Max 42°C',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
-                        Text(
-                          'Min 33°C',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
-                        Text(
-                          'Humidity: 40%',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
-                      ],
-                    )
+                    const Text(
+                      'Soil Humidity',
+                      style: TextStyle(
+                          fontSize: 30,
+                          color: Colors.white,
+                          fontFamily: 'sans'),
+                    ),
                   ],
                 )),
               ),
@@ -73,10 +106,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 200,
                 width: double.infinity,
                 color: AppColors.primaryColor.withOpacity(0.8),
-                child: const Center(
-                    child: Text(
-                  'Soil Humidity 30%',
-                  style: TextStyle(fontSize: 30, color: Colors.white),
+                child: Center(
+                    child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$temperature° C',
+                      style: const TextStyle(
+                          fontSize: 60,
+                          color: Colors.white,
+                          fontFamily: 'sans'),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Humidity: $humidity%',
+                          style: const TextStyle(
+                              fontSize: 30,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w200,
+                              fontFamily: 'sans'),
+                        ),
+                      ],
+                    )
+                  ],
                 )),
               ),
               const SizedBox(
@@ -92,18 +148,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Text(
                         'Water Motor',
-                        style: TextStyle(fontSize: 30, color: Colors.white),
+                        style: TextStyle(
+                            fontSize: 30,
+                            color: Colors.white,
+                            fontFamily: 'sans'),
                       ),
                       const SizedBox(
                         width: 20,
                       ),
-                      Switch(value: isMotorOn, onChanged: motorOn),
+                      Switch(
+                        value: isMotorOn,
+                        onChanged: motorOn,
+                        activeColor: AppColors.primaryColor,
+                        activeTrackColor: Colors.white,
+                        inactiveTrackColor: Colors.grey,
+                      ),
                     ],
                   ))),
               const SizedBox(
                 height: 2,
               ),
-              Expanded(
+              SizedBox(
+                height: 300,
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(
